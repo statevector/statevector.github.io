@@ -2,3 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+baseR.*
+bookdown
+notes
+.DS_Store
