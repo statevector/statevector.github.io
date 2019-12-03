@@ -1,0 +1,349 @@
+---
+title: "dplyr Notes"
+author: "Christopher Willis"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+    df_print: paged
+    toc: true
+    toc_float: true
+    collapsed: false
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, cache = FALSE)
+```
+
+# The dplyr Package
+
+```{r, echo=TRUE, results="hide"}
+library(dplyr)
+```
+
+The `dplyr` package was built for the sole purpose of simplifying the process of manipulating, sorting, summarizing, and joining data frames. The basic `dplyr` functions (or "verbs") are:  
+- select: select columns  
+- filter: select rows  
+- group by: group data into categorical levels  
+- summarise: summarizes data by function of choice  
+- arrange: reorder rows  
+- join: join separate data frames  
+- mutate: create features from existing features  
+ 
+`dplyr` operations always take a data frame as their first argument; the result of such an operation is a transformed data frame. This allows operations to be chained together with the the pipe operator `%>%`.
+
+# Quick View Operations
+
+```{r}
+glimpse(mtcars)
+```
+
+# Tibbles
+
+The function `tibble` constructs a dplyr data frame, which allows for advanced printing, and some other features missing in base R data frames.
+```{r}
+x <- c(4, 7, 8, 2)
+y <- 1:4
+df <- tibble(x, y)
+```
+
+It is also possible to cast an `R` data frame as `dplyr` tibble
+```{r}
+df <- as_tibble(mtcars)
+df
+```
+
+# Select
+
+**Objective**: Reduce dataframe size to only desired variables for current task
+
+**Function**: 
+```
+select(data, ...)
+```
+
+**Arguments**:
+```
+data:           data frame
+...:            variable names or positions; useful expressions include -, :, and c().
+```
+
+**Examples**
+
+select by column names
+```{r}
+mtcars.small <- mtcars %>% 
+  select(mpg, cyl, wt)
+```
+
+select by column indices
+```{r}
+mtcars.small <- mtcars %>% 
+  select(1:4)
+```
+
+select by column starting letter
+```{r}
+mtcars.small <- mtcars %>% 
+  select(starts_with("c"))
+```
+
+**Scoped Variants**
+
+Three scoped variants of `select` exist: `select_all`, `select_if`, and `select_at`
+
+**Notes**
+
+Special regex-like functions exist to grab specific data frame columns by name or pattern
+```
+data %>% select(contains("."))
+data %>% select(everything())
+data %>% select(starts_with("abc"))
+data %>% select(num_range("x", 1:5))
+data %>% select(ends_with("xyz"))
+data %>% select(matches(".t."))
+data %>% select(one_of(c("Sp", "Gen")))
+```
+
+# Filter
+
+**Objective**: Reduce data frame observations according to a specific value or condition
+
+**Function**: 
+```
+filter(data, ...)
+```
+
+**Arguments**:
+```
+data:           data frame
+...:            conditions to be met
+```
+
+**Examples**:
+
+```{r}
+airquality.filtered <- as_tibble(airquality) %>% 
+  filter(Ozone > 30, Solar.R > 200)
+```
+
+**Useful logical and comparison operators**
+
+```
+<   Less than                    !=      Not equal to
+>   Greater than                 %in%    Group membership
+==  Equal to                     is.na   is NA
+<=  Less than or equal to        !is.na  is not NA
+>=  Greater than or equal to     &,|,!   Boolean operators
+```
+
+operations exist for numeric vector comparison as well
+```
+near(x, y, tol)
+between(x, left, right)
+```
+
+# Group By
+
+**Objective**: group observations based on unique values of a categorical feature (or features).
+
+**Function**: 
+```
+group_by(data, ...)
+```
+
+**Arguments**:
+```
+data:           data frame
+...:            categorical variable(s) to group by
+```
+
+**Examples**:
+
+```{r}
+library(ggplot2)
+```
+
+summarize the data by groups. One row for each group, and one column for each function applied.
+```{r}
+diamonds %>% 
+  group_by(cut) %>% 
+  summarize(carat = mean(carat), 
+            depth = mean(depth),
+            price = mean(price))
+```
+
+add summarization information back onto the original data frame
+```{r}
+mtcars %>% 
+  group_by(cyl) %>% 
+  mutate(mean_mpg = mean(mpg), sd_mpg = sd(mpg))
+```
+
+# Summarise
+
+**Objective**: produce summary statistics for the data
+
+**Function**: 
+```
+summarise(data, ...)
+```
+
+**Arguments**:
+```
+data:           data frame
+...:            name-value pairs of summarize functions. The name is name of the resulting variable, and the value is a single value that results from the application of a summarization function to the data
+```
+
+**Examples**:
+
+summarize over all examples in the data frame
+```{r}
+by_cyl <- mtcars %>% 
+  summarize(mean_mpg = mean(mpg, na.rm = TRUE),
+            sd_mpg = sd(mpg, na.rm = TRUE))
+```
+
+summarize using grouped examples in the data frame
+```{r}
+by_cyl <-mtcars %>% 
+  group_by(cyl) %>% 
+  summarize(mean_mpg = mean(mpg, na.rm = TRUE),
+            sd_mpg = sd(mpg, na.rm = TRUE))
+```
+
+**Scoped Variants**
+
+- `summarise_all()` will summarise all columns based on your further instructions
+- `summarise_if()` requires a function that returns a boolean. If that is true, the summary instructions will be followed.
+- `sumarise_at()` requires you to specify columns inside a `vars()` argument for which the summary will be done.
+
+**Useful Summarization Functions**:
+```
+Center: mean(), median()
+Spread: sd(), IQR(), mad()
+Range: min(), max(), quantile()
+Position: first(), last(), nth(),
+Count: n(), n_distinct()
+Logical: any(), all()
+```
+
+# Arrange
+
+**Objective**: sort data by row(s) in ascending or descending order
+
+**Function**: 
+```
+arrange(data, ...)
+```
+
+**Arguments**:
+```
+data:           data frame
+...:            variable(s) to order by
+```
+
+**Examples**:
+
+in ascending order
+```{r}
+by_mpg <- mtcars %>% 
+  arrange(mpg)
+```
+
+in descending order
+```{r}
+by_mpg <- mtcars %>% 
+  arrange(desc(mpg))
+```
+
+**Notes**:
+
+If you already grouped your data, you can refer to that group within the `arrange()` statement as well by adding a `.by_group = TRUE` statement
+
+# Pull
+
+**Objective**: Return a single column from a data frame as a vector (and not as a dataframe like with `select()`)
+
+**Function**:
+```
+pull(.data, var = -1)
+```
+
+**Arguments**:
+```
+data:           data frame
+var:            a literal variable name, a positive integer (from left), or a negative integer (from right)
+```
+
+**Examples**
+
+pull by variable name
+```{r, echo=TRUE, results="hide"}
+mtcars %>% 
+  pull(cyl)
+```
+
+or by variable index
+```{r, echo=TRUE, results="hide"}
+mtcars %>% 
+  pull(1)
+```
+
+The analogpus base R operation is
+```{r, echo=TRUE, results="hide"}
+mtcars[["cyl"]]
+```
+
+or by index
+```{r, echo=TRUE, results="hide"}
+mtcars[[1]]
+```
+
+# n_distinct
+
+**Objective**: find the number of distinct (or unique) elements of a list or vector, or data frame column
+
+**Function**: 
+```
+n_distinct(..., na.rm = FALSE)
+```
+
+**Arguments**:
+```
+...           vectors of values
+na.rm         if TRUE missing values don't count
+```
+
+**Example**
+
+```{r}
+mtcars$mpg %>% n_distinct()
+```
+
+possible to achieve the sane count in base R
+```{r}
+mtcars$mpg %>% unique %>% length
+```
+
+# Mutate
+- create features from existing features
+
+# Transmute
+- like mutate, but drops the existing variables in favor of newly defined ones.
+
+# Rename
+- rename an existing variable
+
+# Slice
+- select specifc rows from data frame
+
+# sample_frac
+- randomly select a fraction of rows of data
+
+# sample_n
+- randomly select n rows of data
+
+# Join
+- inner, outer, left, right

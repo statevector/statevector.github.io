@@ -1,0 +1,47 @@
+---
+title: "forcats Notes"
+author: "Christopher Willis"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+    df_print: paged
+    toc: true
+    toc_float: true
+    collapsed: false
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, cache = FALSE)
+```
+
+# The forcats Package
+
+```{r, echo=TRUE, results="hide"}
+library(forcats)
+```
+
+# factor operations
+
+```{r}
+f1 <- factor(c("a", "c"))
+f2 <- factor(c("b", "a"))
+```
+
+combine factors with different levels
+```{r}
+f3 <- fct_c(f1, f2)
+```
+
+count entries for each level in a factor
+```{r}
+fct_count(f3)
+```
+
+get unique values of a factor
+```{r}
+fct_unique(f3)
+```
+
+

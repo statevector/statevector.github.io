@@ -1,0 +1,236 @@
+---
+title: "tidyr Notes"
+author: "Christopher Willis"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+    df_print: paged
+    toc: true
+    toc_float: true
+    collapsed: false
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, cache = FALSE)
+```
+
+# The tidyr Package
+
+```{r, echo=TRUE, results="hide"}
+library(tidyr)
+```
+
+The `tidyr` package is built for the sole purpose of simplifying the process of creating tidy data   
+
+`tidyr` provides four fundamental functions for data tidying:   
+- `gather()` makes "wide" data longer   
+- `spread()` makes "long" data wider   
+- `separate()` splits a single column into multiple columns   
+- `unite()` combines multiple columns into a single column
+
+`gather` and `spread` are used to resolve one of two common problems:   
+- One variable might be spread across multiple columns.   
+- One observation might be scattered across multiple rows.   
+
+# Gather
+
+**Objective**: Sometimes data is formatted in such a way that some of the columns are named after values of variable takes on instead of the variable itself (e.g. columns for whether the year is `1999`, `2000`, etc. where the desired variable is `date` in years). Here, `gather` can be used to gather those columns into a new pair of variables.
+
+**Function**: 
+```
+gather(data, key, value, ..., na.rm = FALSE, convert = FALSE)
+```
+
+**Arguments**:
+```
+data:           data frame  
+key:            column name representing new variable   
+value:          column name representing variable values  
+...:            names of columns to gather (or not gather). If empty, all columns are selected. Use a:b to select range or -c to exclude.  
+na.rm:          option to remove observations with missing values  
+convert:        if TRUE will automatically convert values to logical, integer, numeric, complex or factor as appropriate
+```
+
+**Example**:
+
+<!-- One variable might be spread across multiple columns. -->
+
+<!-- one variable (e.g. date) might be spread across multiple columns (e.g. 1999, 2000, etc.). Use gather to pull the multiple columns into a single column. -->
+
+The `gather` operation requires at least three arguments.   
+- The set of columns that represent values and not variables; i.e. `X:Z`   
+- The key, or the name of the variable whose values form the column names; i.e. `stock`   
+- The value, or the name of the variable whose values are spread over the cells; i.e. `price`   
+
+Here, the `price` of each stock is spread across three columns
+```{r}
+stocks <- tibble(time = as.Date('2009-01-01') + 0:9,
+                 X = rnorm(10, 0, 1),
+                 Y = rnorm(10, 0, 2),
+                 Z = rnorm(10, 0, 4))
+```
+
+The resulting dataframe is
+```{r}
+stocks
+```
+
+Using `gather`, we can pull each stock into a single stock column
+```{r}
+stocks %>% gather(key = "stock", value = "price", X:Z)
+```
+
+**Notes**:
+
+These all produce the same result
+```
+stocks %>% gather("stock", "price", X:Z)
+stocks %>% gather("stock", "price", -time)
+stocks %>% gather("stock", "price", X, Y, Z)
+stocks %>% gather("stock", "price", 2:4)
+```
+
+Other names for gather include melt (reshape2), pivot (spreadsheets), and fold (databases)
+
+# Separate
+
+**Objective**: Split a single variable into two; i.e. turn a single character column into multiple columns.
+
+**Function**: 
+```
+separate(data, col, into, sep = " ", remove = TRUE, convert = FALSE)
+```
+
+**Arguments**:
+```
+data:           data frame
+col:            column name or position representing current variable
+into:           names of new variables to create as character vector
+sep:            how to separate current variable (char, num, or symbol); default is a regular expression that matches any sequence of non-alphanumeric values
+remove:         if TRUE, remove input column from output data frame
+convert:        if TRUE will automatically convert values to logical, integer, numeric, complex or factor as appropriate
+```
+
+**Example**:
+
+```{r}
+revenue <- tibble(Group = c(1, 1, 1, 1, 2, 2),
+                  Year = c(2006, 2007, 2008, 2009, 2006, 2007),
+                  Quarter = c("Qtr.1", "Qtr.1", "Qtr.1", "Qtr.1", "Qtr.1", "Qtr.1"),
+                  Revenue = c(15, 12, 22, 10, 12, 16))
+revenue
+```
+
+```{r}
+revenue %>% 
+  separate(col = Quarter, 
+           into = c("Interval", "Interval_ID"), 
+           sep = "\\.", 
+           convert = TRUE)
+```
+
+# Unite
+
+**Objective**: Merge two variables into one
+
+**Function**: 
+```
+unite(data, col, ..., sep = " ", remove = TRUE)
+```
+
+**Arguments**:
+```
+data:           data frame
+col:            column name of new "merged" column
+...:            names or positions of columns to merge
+sep:            separator to use between merged values
+remove:         if TRUE, remove input column from output data frame
+```
+
+**Example**:
+
+```{r}
+revenue <- tibble(Group = c(1, 1, 1, 1, 2, 2),
+                  Year = c(2006, 2007, 2008, 2009, 2006, 2007),
+                  Interval = c("Qtr", "Qtr", "Qtr", "Qtr", "Qtr", "Qtr"),
+                  Interval_ID = c(1, 1, 1, 1, 1, 1),
+                  Revenue = c(15, 12, 22, 10, 12, 16))
+revenue
+```
+
+```{r}
+revenue %>% unite(col = Quarter, 
+                  c(Interval, Interval_ID), 
+                  sep = ".")
+```
+
+**Notes**:
+
+This function is a complement to `separate()`
+
+# Spread
+
+**Objective**: Reshape long format data to wide format data; opposite of gather.
+
+**Function**: 
+```
+spread(data, key, value, fill = NA, convert = FALSE)
+```
+
+**Arguments**:
+```
+data:           data frame
+key:            column values to convert to multiple columns
+value:          single column values to convert to multiple columns' values 
+fill:           If there isn't a value for every combination of the other variables and the key column, this value will be substituted
+convert:        if TRUE will automatically convert values to logical, integer, numeric, complex or factor as appropriate
+```
+
+**Example**:
+
+```{r}
+measurements <- tibble(name = c("Wilbur", "Petunia", "Gregory", "Wilbur", "Petunia", "Gregory"),
+                       drug = c("a", "a", "a", "b", "b", "b"),
+                       heartrate = c(67, 80, 64, 56, 90, 50))
+```
+
+```{r}
+measurements %>% spread(key = drug, value = heartrate)
+```
+
+```{r}
+measurements %>% spread(key = name, value = heartrate)
+```
+
+**Notes**:
+
+This function is a complement to `gather()`
+
+# Drop NA
+
+**Objective**: drop data frame rows with missing values
+
+**Function**: 
+```
+drop_na(data, ...) 
+```
+
+**Arguments**: 
+```
+data          A data frame.
+...           A selection of columns. If empty, all variables are selected. 
+```
+
+**Example**:
+
+Drop `NA` values appearing in the `Ozone` variable
+```{r}
+airquality %>% drop_na(Ozone)
+```
+
+Drop `NA` values appearing in all variables
+```{r}
+airquality %>% drop_na
+```

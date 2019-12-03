@@ -1,0 +1,134 @@
+---
+title: "purrr Notes"
+author: "Christopher Willis"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+    df_print: paged
+    toc: true
+    toc_float: true
+    collapsed: false
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, cache = FALSE)
+```
+
+# The purrr Package
+
+```{r, echo=TRUE, results="hide"}
+library(purrr)
+```
+
+The `purrr` is package provides a set of functions and tools to manipulate vectors (atomic vectors, lists, and data frames). Like `dplyr` the goal is to simplify data analysis and manipulation; here, however, while `dplyr` focuses exclusivelty on data frames, `purrr` focuses on the manipulation of vectors.
+
+One of `purrr`'s primary functions is `map()`, which is used to apply a function or formula to each element of a list. The result is a list with same length as the input (i.e. "list in, list out") and is analogous to the `lapply()` (list-apply) function of base R.
+
+The `map()` function always returns a list, but if you know the elements of the list are all of the same type (e.g. numeric, character, boolean, etc.) and each element is of length one, you can use any of the `map_*()` functions to return the appropriate type of atomic vector.
+
+is this right?
+- list in, list out   
+- list in, vector out   
+- vector in, list out   
+- vector in, vector out   
+
+# Map
+
+**Objective**: Apply a specific function to each element of a vector
+
+**Function**: 
+```
+map(x, f, ...)
+```
+
+**Arguments**:
+```
+x:           a list or atomic vector
+f:           a function, formula, or vector
+...          additional arguments passed to the mapped function
+```
+
+**Examples**
+
+```{r}
+my_list <- list(e1 = c(1, 2, 3), e2 = c(4, 5, 6), e3 = c(7, 8, 9))
+```
+
+We can find the `mean` of each element of a list individually
+```{r}
+my_list[[1]] %>% mean()
+my_list[[2]] %>% mean()
+my_list[[3]] %>% mean()
+```
+
+With `purrr`, we can use `map` to apply the mean function to each element of the list 
+```{r}
+my_list %>% 
+  map(mean, na.rm=TRUE)
+```
+
+The resulting output is a list. Since each element has length 1, we can use `map_dbl` to return a numeric vector
+```{r}
+my_list %>% 
+  map_dbl(mean, na.rm=TRUE)
+```
+
+using inline function with `map`
+```{r}
+my_list %>% 
+  map(function(x) x^2) 
+```
+
+also possible to use the the `~.` formula notation, which is converted to an inline function
+```{r}
+1:10 %>% map_int(~.x + 1L)
+```
+
+"vector in, vector out"
+```{r}
+1:10 %>% 
+  map_dbl(function(x) x^2)
+```
+
+"vector in, list out"
+```{r}
+1:10 %>% 
+  map(function(x) x)
+```
+
+# Map Variants (vector output)
+
+Several `map_*()` functions return an atomic vector; i.e. "list in, atomic vector out". These are analogous to the `vapply()` function in base R. These include
+```
+map_lgl
+map_int
+map_dbl
+map_chr
+```
+
+check if elements are numeric, cast as logical, character, int, etc.
+```{r}
+my_list %>% map_lgl(is.numeric) # TRUE, TRUE, TRUE
+my_list %>% map_chr(is.numeric) # "TRUE", "TRUE", "TRUE"
+my_list %>% map_int(is.numeric) # 1, 1, 1
+```
+
+# Map Variants (conditionals)
+
+The _if and _at variants take a predicate function .p that determines which elements of .x are transformed with .f.
+```
+map_if(.x, .p, .f, ..., .else = NULL)
+map_at(.x, .at, .f, ...)
+```
+
+# map_df
+- `map()` returns a list. To coerce the output to a data frame, use `map_df()`. This has no base R equivalent.
+
+# Map2
+- use `map2()` to apply a function `f(x,y)` over the elements of two same-length lists simultaneously
+
+# Pmap
+- use `pmap()` to apply a function `f(x1, x2, ..., xn)` over `n` same-length vectors simultaneously
+

@@ -1,0 +1,21 @@
+---
+title: "R Studio Notes"
+author: "Christopher Willis"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+    df_print: paged
+    toc: true
+    toc_float: true
+    collapsed: false
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, cache = FALSE)
+```
+
+# R Studio
+
+To see the whole dataset, you can run `View()` which will open the dataset in the RStudio viewer

@@ -1,0 +1,144 @@
+---
+title: "ggplot2 Notes"
+author: "Christopher Willis"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+    df_print: paged
+    toc: true
+    toc_float: true
+    collapsed: false
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, cache = FALSE)
+```
+
+# The ggplot2 Package
+
+```{r, echo=TRUE, results="hide"}
+library(ggplot2)
+```
+
+# Aesthetics
+
+An aesthetic is a visual property of the objects in your plot; e.g. displays points are circles or triangles
+
+possible to map a variable to color aesthetic
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = class))
+```
+
+... or size aesthetic. Also possible to set `alpha` (transparancy) or `shape` (type of point)
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, size = class))
+```
+
+... also possible to set the aesthetic properties of the geom manually
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy), color = "blue")
+```
+
+# Facets
+
+possible to split a plot into factets; i.e. one subplot subsetted for each categorical variable
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_wrap(~ class, nrow = 2)
+```
+
+# Geometric Objects
+
+Every geom_* function in ggplot2 takes a mapping argument
+
+possible to fit a smooth line to data with geom_smooth()
+```{r}
+ggplot(data = mpg) + 
+  geom_smooth(mapping = aes(x = displ, y = hwy))
+```
+
+possible to separate variable into different lines based on a categorical varible
+```{r}
+ggplot(data = mpg) + 
+  geom_smooth(mapping = aes(x = displ, y = hwy, linetype = drv))
+```
+
+# Statistical Transformations
+
+- bar charts, histograms, polygons bin the data and plot bin counts   
+- smoothers fit model to data and plot predictions   
+
+- "stat" algorithm is used in each case; i.e. transformation applied to data to compute summary statistics   
+- geom uses transformed data to build plot   
+- possible to change default stat for a given geom   
+
+## Bar Charts
+
+bar chart calculates counts from the dataset automatically
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut))
+```
+
+## Histograms
+
+use bar charts for discrete data, histograms for continuous
+```{r}
+ggplot(diamonds, aes(price, fill = cut)) +
+  geom_histogram(binwidth = 500)
+```
+
+## Boxplots
+
+boxplots can be used to compute summary statistics
+
+## Summary
+
+```{r}
+ggplot(data = diamonds) + 
+  stat_summary(
+    mapping = aes(x = cut, y = depth),
+    fun.ymin = min,
+    fun.ymax = max,
+    fun.y = median
+  )
+```
+
+# General ggplot2 format
+
+Any ggplot2 plot takes 7 arguments. The template is
+
+```
+ggplot(data = <DATA>) + 
+  <GEOM_FUNCTION>(
+     mapping = aes(<MAPPINGS>),
+     stat = <STAT>, 
+     position = <POSITION>
+  ) +
+  <COORDINATE_FUNCTION> +
+  <FACET_FUNCTION>
+```
+
+# using factors
+
+```{r}
+library(dplyr)
+air.temp <- airquality %>%  
+  as_tibble %>% 
+  mutate(tempcat = factor(Temp > 80, labels = c("cold", "hot")),
+         Year = 1973,
+         date = ISOdate(Year, Month, Day))
+```
+
+```{r}
+air.temp %>% 
+  ggplot() + 
+  geom_point(mapping = aes(x = date, y = Temp, color = tempcat))
+```
+
